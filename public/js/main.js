@@ -1,0 +1,1 @@
+console.log("Inside javascript front end");

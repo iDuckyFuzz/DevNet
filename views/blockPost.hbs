@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{!-- need to use / to directly access the public folder --}}
+    <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Blog</title>
+</head>
+
+<body>
+    {{>nav this}}
+    <h1>New Block</h1>
+
+    <form action="/blockpost" method="post">
+
+        <label for="">Title:</label><br>
+        <input type="text" name="title" id="title"><br><br>
+
+        <label for="">Body:</label><br>
+        <input type="text" name="body" id="body"><br><br>
+
+        <button type="submit">Submit Block</button>
+    </form>
+
+    <script src="/js/main.js"></script>
+</body>
+
+</html>
