@@ -51,27 +51,38 @@ app.use(express.static(publicDirectory));
 
 app.get('/', auth.isLoggedIn, async (req, res) => {
     if (req.user) {
-        console.log("User found");
         const users = await User.find();
         if (req.user.admin) {
-            const users = await User.find();
-            console.log("You are an admin");
             res.render("index", {
-                users: users
+                users: users,
+                loggedIn: true,
+                admin: req.user.admin
             });
         } else {
-            res.render("index");
+            res.render("index", {
+                loggedIn: true,
+                admin: req.user.admin
+            });
         }
     } else {
-        console.log("You are a guest");
         res.render("index");
     }
 });
 
 app.get('/logout', auth.logout, (req, res) => {
     res.render("login", {
-        error: "You have logged out!"
+        error: "You have logged out!",
+        loggedIn: false,
     });
+})
+
+app.get('/admin', auth.isLoggedIn, (req, res) => {
+    if (req.user.admin) {
+        res.render("admin", {
+            loggedIn: true,
+            admin: req.user.admin
+        })
+    }
 })
 
 app.get('/register', (req, res) => {
@@ -85,7 +96,6 @@ app.get('/profile', auth.isLoggedIn, async (req, res) => {
     try {
         //you will only be able to view the users profile
         if (req.user) {
-            console.log(req.user.name);
             //could use a try catch here 
             //const user = await User.findById(req.params.id);
 
@@ -99,46 +109,69 @@ app.get('/profile', auth.isLoggedIn, async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                allBlocks: allBlocks
+                allBlocks: allBlocks,
+                loggedIn: true,
+                admin: req.user.admin
             });
         } else {
             //probably went to redirect them to register?
-            res.render("profile");
+            res.render("register", {
+                message: "You must be register to view your profile"
+            });
         }
     } catch (err) {
         res.send("Unable to display profile");
     }
 });
 
-app.get('/profile/update', auth.isLoggedIn, async (req, res) => {
+app.get('/update', auth.isLoggedIn, async (req, res) => {
+    const user = req.user
 
-    //could use a try catch if the user doesn't exist
+    res.render("update", {
+        name: user.name,
+        email: user.email,
+        loggedIn: true,
+        admin: req.user.admin
+    });
+});
 
-    // const userName = req.user.name
-    // const userEmail = "Jill@gmail.com";
+app.post('/update', auth.isLoggedIn, async (req, res) => {
+    const user = req.user
+    console.log(req.user._id);
+    await User.findByIdAndUpdate(req.user._id, {
+        name: req.body.name,
+        email: req.body.email
+    })
+    res.render("profile", {
+        name: req.body.name,
+        email: req.body.email,
+        message: "Profile updated!",
+        loggedIn: true,
+        admin: req.user.admin
+    });
 
-    // await User.findByIdAndUpdate(req.params.id, {
-    //     name: userName,
-    //     email: userEmail
-    // })
-
-    res.send(`${req.user.name}: Update Succesful!`);
 });
 
 
 app.post('/delete/', auth.isLoggedIn, async (req, res) => {
     //could use a try catch if the user doesn't exist
     await User.findByIdAndDelete(req.user._id)
-    res.send("Delete Succesful!");
+    await Block.deleteMany({ user: req.user._id });
+    await Comment.deleteMany({ user: req.user._id });
+    res.render("register", {
+        message: "Sorry to see you go! Remember you can register again anytime!"
+    });
 });
 
 
 app.get('/blockpost', auth.isLoggedIn, (req, res) => {
-    try {
+    if (req.user) {
         res.render("blockPost", {
-            id: req.user._id
+            id: req.user._id,
+            loggedIn: true,
+            admin: req.user.admin
         });
-    } catch (err) {
+    } else {
         res.render("login", {
             message: "You must be logged in to create a block post"
         });
@@ -146,23 +179,39 @@ app.get('/blockpost', auth.isLoggedIn, (req, res) => {
 });
 
 app.get('/allBlocks', auth.isLoggedIn, async (req, res) => {
-    const allBlocks = await Block.find();
-    const allComments = await Comment.find();
-    console.log(allComments);
+    let authenticated = false;
+    if (req.user) {
+        authenticated = true;
+    }
+
+    const allBlocks = await Block.find().populate('user', 'name');
+    const allComments = await Comment.find().populate('user', 'name');
     res.render("allBlocks", {
         allBlocks: allBlocks,
-        allComments: allComments
+        allComments: allComments,
+        loggedIn: authenticated
     });
 });
 
 app.post('/blockpost', auth.isLoggedIn, async (req, res) => {
+    let authenticated = false;
+    if (req.user) {
+        authenticated = true;
+    }
+
     await Block.create({
         user: req.user._id,
         title: req.body.title,
         body: req.body.body,
     })
 
-    res.send("Post Succesful")
+    const allBlocks = await Block.find().populate('user', 'name');
+    const allComments = await Comment.find().populate('user', 'name');
+    res.render("allBlocks", {
+        allBlocks: allBlocks,
+        allComments: allComments,
+        loggedIn: authenticated
+    });
 });
 
 
@@ -190,7 +239,8 @@ app.post('/login', async (req, res) => {
             }
             res.cookie('jwt', token, cookieOptions);
             res.render("index", {
-                message: "Succesfully Logged in!"
+                message: "Succesfully Logged in!",
+                loggedIn: true
             })
         } else {
             const error = "login failed";
@@ -206,19 +256,63 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.post('/addcomment', auth.isLoggedIn, async (req,res) => {
+//to do figure out how to get the user/block id from the comemnt 
+app.post('/addcomment/:id', auth.isLoggedIn, async (req, res) => {
+
+    let authenticated = false;
+    if (req.user) {
+        authenticated = true;
+    }
     await Comment.create({
-        user: req.user._id,
-        comment: req.body.comment
+        user: req.user.id,
+        block: req.params.id,
+        comment: req.body.comment,
+        loggedIn: authenticated
     })
 
-    const allBlocks = await Block.find();
-    const allComments = await Comment.find();
+    const allBlocks = await Block.find().populate('user', 'name');
+    const allComments = await Comment.find().populate('user', 'name');
     res.render("allBlocks", {
         allBlocks: allBlocks,
-        allComments: allComments
+        allComments: allComments,
+        loggedIn: authenticated
     });
 })
+
+app.post('/updatepassword', auth.isLoggedIn, async (req, res) => {
+
+    let authenticated = false;
+    if (req.user) {
+        authenticated = true;
+    }
+    const user = await User.findOne({ _id: req.user.id })
+    if (req.body.pword === req.body.pwordConfirm) {
+        const isMatch = await bcrypt.compare(req.body.currentPword, user.password)
+        if (isMatch) {
+            let hashedPassword = await bcrypt.hash(req.body.pword, 8);
+            console.log(hashedPassword);
+            await User.findByIdAndUpdate(req.user.id, {
+                password: hashedPassword
+            })
+            res.render("profile", {
+                message: "Password Updated",
+                name: user.name,
+                email: user.email,
+                loggedIn: authenticated
+            });
+        } else {
+            res.render("profile", {
+                message: "Current password is incorrect",
+                loggedIn: authenticated
+            });
+        }
+    } else {
+        res.render("profile", {
+            message: "Passwords do not match!",
+            loggedIn: authenticated
+        });
+    }
+});
 
 app.post('/register', async (req, res) => {
 
@@ -228,16 +322,23 @@ app.post('/register', async (req, res) => {
         });
     } else {
         //hash the password
-        let hashedPassword = await bcrypt.hash(req.body.pword, 8);
-        await User.create({
-            name: req.body.userName,
-            email: req.body.userEmail,
-            password: hashedPassword
-        })
+        const reg = await User.findOne({ email: req.body.userEmail });
+        if (reg) {
+            res.render("register", {
+                message: "Email address already registered!"
+            });
+        } else {
+            let hashedPassword = await bcrypt.hash(req.body.pword, 8);
+            await User.create({
+                name: req.body.userName,
+                email: req.body.userEmail,
+                password: hashedPassword
+            })
 
-        res.render("index", {
-            message: "Succesfully registered, please login."
-        });
+            res.render("index", {
+                message: "Succesfully registered, please login."
+            });
+        }
     }
 });
 

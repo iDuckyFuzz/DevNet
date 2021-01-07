@@ -4,3 +4,15 @@
 body{
     font-family: 'Lobster', cursive;
 }
+
+.comment h4{
+    margin: 0;
+}
+
+.comment p{
+    margin: 0;
+}
+
+.comments form{
+    margin-top: 15px;
+}

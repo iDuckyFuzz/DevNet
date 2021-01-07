@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{!-- need to use / to directly access the public folder --}}
+    <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+</head>
+
+<body>
+    {{>nav this}}
+
+    <form action="/update" method="post">
+        <label for="name">Update Name:</label><br>
+        <input type="text" name="name" id="name" placeholder={{name}}></input><br><br>
+
+        <label for="email">Update Email:</label><br>
+        <input type="text" name="email" id="email" placeholder={{email}}><br><br>
+
+        <button type="submit">Update</button>
+    </form>
+
+    <h3>{{message}}</h3>
+</body>
+
+</html>

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 //tables in mongodb are called collections
-const blog = new mongoose.Schema({
+const block = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         require: true,
@@ -20,4 +20,4 @@ const blog = new mongoose.Schema({
     timestamps:true
 })
 
-module.exports = mongoose.model('blog', blog);
+module.exports = mongoose.model('block', block);

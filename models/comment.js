@@ -7,10 +7,10 @@ const comment = new mongoose.Schema({
         require: true,
         ref:'user',
     },
-    post: {
+    block: {
         type: mongoose.Schema.Types.ObjectId,
         require: true,
-        ref:'post',
+        ref:'block',
     },
     comment: {
         type: String,
