@@ -12,6 +12,17 @@
 <body>
     {{>nav this}}
     <h1>This is the Admin portal.</h1>
+
+    {{#each users}}
+    <p>{{this.name}}</p>
+    <form action="/admin/update" method="post">
+        <button type="submit" name="id" value={{this._id}}>Edit</button>
+    </form>
+
+    <form action="/delete" method="post">
+        <button type="submit" name="id" value={{this._id}}>Delete</button>
+    </form>
+    {{/each}}
 </body>
 
 </html>

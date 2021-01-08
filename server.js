@@ -76,13 +76,16 @@ app.get('/logout', auth.logout, (req, res) => {
     });
 })
 
-app.get('/admin', auth.isLoggedIn, (req, res) => {
+app.get('/admin', auth.isLoggedIn, async (req, res) => {
+    const users = await User.find();
     if (req.user.admin) {
         res.render("admin", {
             loggedIn: true,
-            admin: req.user.admin
+            admin: req.user.admin,
+            users: users
         })
     }
+
 })
 
 app.get('/register', (req, res) => {
@@ -124,10 +127,24 @@ app.get('/profile', auth.isLoggedIn, async (req, res) => {
     }
 });
 
+app.post('/admin/update', auth.isLoggedIn, async (req, res) => {
+    const user = await User.findOne({ _id: req.body.id });
+    console.log(user.name);
+
+    res.render("update", {
+        id: req.body.id,
+        name: user.name,
+        email: user.email,
+        loggedIn: true,
+        admin: req.user.admin
+    });
+});
+
 app.get('/update', auth.isLoggedIn, async (req, res) => {
     const user = req.user
 
     res.render("update", {
+        id: req.body._id,
         name: user.name,
         email: user.email,
         loggedIn: true,
@@ -136,9 +153,7 @@ app.get('/update', auth.isLoggedIn, async (req, res) => {
 });
 
 app.post('/update', auth.isLoggedIn, async (req, res) => {
-    const user = req.user
-    console.log(req.user._id);
-    await User.findByIdAndUpdate(req.user._id, {
+    await User.findByIdAndUpdate(req.body.id, {
         name: req.body.name,
         email: req.body.email
     })
@@ -154,13 +169,22 @@ app.post('/update', auth.isLoggedIn, async (req, res) => {
 
 
 app.post('/delete/', auth.isLoggedIn, async (req, res) => {
-    //could use a try catch if the user doesn't exist
-    await User.findByIdAndDelete(req.user._id)
-    await Block.deleteMany({ user: req.user._id });
-    await Comment.deleteMany({ user: req.user._id });
-    res.render("register", {
-        message: "Sorry to see you go! Remember you can register again anytime!"
-    });
+    if (req.body.id) {
+        await User.findByIdAndDelete(req.body.id)
+        await Block.deleteMany({ user: req.body.id });
+        await Comment.deleteMany({ user: req.body.id });
+        res.render("register", {
+            message: "Admin deleted User!"
+        });
+    } else {
+        //could use a try catch if the user doesn't exist
+        await User.findByIdAndDelete(req.user._id)
+        await Block.deleteMany({ user: req.user._id });
+        await Comment.deleteMany({ user: req.user._id });
+        res.render("register", {
+            message: "Sorry to see you go! Remember you can register again anytime!"
+        });
+    }
 });
 
 
@@ -180,8 +204,12 @@ app.get('/blockpost', auth.isLoggedIn, (req, res) => {
 
 app.get('/allBlocks', auth.isLoggedIn, async (req, res) => {
     let authenticated = false;
+    let admin = false;
     if (req.user) {
         authenticated = true;
+        if (req.user.admin) {
+            admin = true
+        }
     }
 
     const allBlocks = await Block.find().populate('user', 'name');
@@ -189,14 +217,19 @@ app.get('/allBlocks', auth.isLoggedIn, async (req, res) => {
     res.render("allBlocks", {
         allBlocks: allBlocks,
         allComments: allComments,
-        loggedIn: authenticated
+        loggedIn: authenticated,
+        admin: admin
     });
 });
 
 app.post('/blockpost', auth.isLoggedIn, async (req, res) => {
     let authenticated = false;
+    let admin = false;
     if (req.user) {
         authenticated = true;
+        if (req.user.admin) {
+            admin = true
+        }
     }
 
     await Block.create({
@@ -210,7 +243,8 @@ app.post('/blockpost', auth.isLoggedIn, async (req, res) => {
     res.render("allBlocks", {
         allBlocks: allBlocks,
         allComments: allComments,
-        loggedIn: authenticated
+        loggedIn: authenticated,
+        admin: admin
     });
 });
 
@@ -223,9 +257,12 @@ app.get('/login', (req, res) => {
 app.post('/login', async (req, res) => {
     //add bycrypt compare of provided user & password
     try {
+        let admin = false;
         const user = await User.findOne({ name: req.body.userName })
         const isMatch = await bcrypt.compare(req.body.pword, user.password)
-
+        if (user.admin) {
+            admin = true;
+        }
         if (isMatch) {
             // create a token to sign to authenticate
             const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -240,7 +277,8 @@ app.post('/login', async (req, res) => {
             res.cookie('jwt', token, cookieOptions);
             res.render("index", {
                 message: "Succesfully Logged in!",
-                loggedIn: true
+                loggedIn: true,
+                admin: admin
             })
         } else {
             const error = "login failed";
@@ -257,7 +295,7 @@ app.post('/login', async (req, res) => {
 });
 
 //to do figure out how to get the user/block id from the comemnt 
-app.post('/addcomment/:id', auth.isLoggedIn, async (req, res) => {
+app.post('/addcomment/', auth.isLoggedIn, async (req, res) => {
 
     let authenticated = false;
     if (req.user) {
@@ -265,7 +303,7 @@ app.post('/addcomment/:id', auth.isLoggedIn, async (req, res) => {
     }
     await Comment.create({
         user: req.user.id,
-        block: req.params.id,
+        block: req.body.blockId,
         comment: req.body.comment,
         loggedIn: authenticated
     })

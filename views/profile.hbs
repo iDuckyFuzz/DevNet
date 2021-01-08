@@ -19,13 +19,13 @@
         <button type="submit">Update Profile</button>
     </form>
 
+    <h2>All My Posts: </h2>
     {{#each allBlocks}}
-    <h2>{{this.title}}</h2>
+    <h3>{{this.title}}</h3>
     <p>{{this.body}}</p>
     {{/each}}
 
-    <br>
-
+    <h2>Update Password: </h2>
     <form action="/updatepassword" method="post">
 
         <label for="currentPword">Current Password:</label><br>
@@ -38,8 +38,9 @@
         <input required type="password" name="pwordConfirm" id="pwordConfirm"><br><br>
         <button type="submit">Update Password</button>
     </form>
+
     <h3>{{message}}</h3>
-    <br>
+    <h2>Delete Your Account: </h2>
     <form action="/delete" method="post">
         <button type="submit">Delete Account</button>
     </form>
