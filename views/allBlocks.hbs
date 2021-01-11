@@ -16,21 +16,34 @@
     {{#each allBlocks}}
     <div class="block" id={{this._id}}>
         <h2>{{this.title}}</h2>
-        <p>{{this.body}}</p>
-        <h4>Author: {{this.user.name}}</h4>
-        <div class="comments">
-            <h3>Comments: </h3>
-            {{#each ../allComments}}
-            <div class="comment {{this.block}}">
-                <h4>{{this.user.name}}</h4>
-                <p id={{this._id}}>{{this.comment}}</p>
-            </div>
-            {{/each}}
-            <form action="/addcomment" method="post">
-                <input type="text" name="comment">
-                <button type="submit" name="blockId" value={{this._id}}>Add Comment</button>
+        <h3>{{this.createdAt}}</h2>
+            <p>{{this.body}}</p>
+            <h4>Author: {{this.user.name}}</h4>
+            {{#if ../admin}}
+            <form action="/deleteblock" method="post">
+                <button id="deleteBlock" type="submit" name="blockId" value={{this._id}}>Delete Block</button>
             </form>
-        </div>
+            <form action="/editblock" method="post">
+                <button id="editblock" type="submit" name="blockId" value={{this._id}}>Edit Block</button>
+            </form>
+            {{/if}}
+            <div class="comments">
+                <h3>Comments: </h3>
+                {{#each ../allComments}}
+                <div class="comment {{this.block}}">
+                    <h4>{{this.user.name}}</h4>
+                    <p id={{this._id}}>{{this.comment}}</p>
+                    <form action="/deletecomment" method="post">
+                        <button id="deleteComment" type="submit" name="commentid" value={{this._id}}>Delete
+                            Comment</button>
+                    </form>
+                </div>
+                {{/each}}
+                <form action="/addcomment" method="post">
+                    <input type="text" name="comment">
+                    <button type="submit" name="blockId" value={{this._id}}>Add Comment</button>
+                </form>
+            </div>
     </div>
     {{/each}}
 

@@ -12,6 +12,7 @@ const auth = require('./middlewares/auth');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const { title } = require('process');
 
 //connect to mongodb database
 mongoose.connect(process.env.DB_URL, {
@@ -168,7 +169,7 @@ app.post('/update', auth.isLoggedIn, async (req, res) => {
 });
 
 
-app.post('/delete/', auth.isLoggedIn, async (req, res) => {
+app.post('/delete', auth.isLoggedIn, async (req, res) => {
     if (req.body.id) {
         await User.findByIdAndDelete(req.body.id)
         await Block.deleteMany({ user: req.body.id });
@@ -221,6 +222,7 @@ app.get('/allBlocks', auth.isLoggedIn, async (req, res) => {
         admin: admin
     });
 });
+
 
 app.post('/blockpost', auth.isLoggedIn, async (req, res) => {
     let authenticated = false;
@@ -295,11 +297,15 @@ app.post('/login', async (req, res) => {
 });
 
 //to do figure out how to get the user/block id from the comemnt 
-app.post('/addcomment/', auth.isLoggedIn, async (req, res) => {
+app.post('/addcomment', auth.isLoggedIn, async (req, res) => {
 
     let authenticated = false;
+    let admin = false;
     if (req.user) {
         authenticated = true;
+        if (req.user.admin) {
+            admin = true;
+        }
     }
     await Comment.create({
         user: req.user.id,
@@ -313,7 +319,96 @@ app.post('/addcomment/', auth.isLoggedIn, async (req, res) => {
     res.render("allBlocks", {
         allBlocks: allBlocks,
         allComments: allComments,
-        loggedIn: authenticated
+        loggedIn: authenticated,
+        admin: admin,
+    });
+})
+
+app.post('/deletecomment', auth.isLoggedIn, async (req, res) => {
+
+    let authenticated = false;
+    let admin = false;
+    if (req.user) {
+        authenticated = true;
+        if (req.user.admin) {
+            admin = true;
+        }
+    }
+    await Comment.findByIdAndDelete(req.body.commentid)
+
+    const allBlocks = await Block.find().populate('user', 'name');
+    const allComments = await Comment.find().populate('user', 'name');
+    res.render("allBlocks", {
+        allBlocks: allBlocks,
+        allComments: allComments,
+        loggedIn: authenticated,
+        admin: admin,
+    });
+})
+
+app.post('/deleteblock', auth.isLoggedIn, async (req, res) => {
+
+    let authenticated = false;
+    let admin = false;
+    if (req.user) {
+        authenticated = true;
+        if (req.user.admin) {
+            admin = true;
+        }
+    }
+    await Block.findByIdAndDelete(req.body.blockId)
+
+    const allBlocks = await Block.find().populate('user', 'name');
+    const allComments = await Comment.find().populate('user', 'name');
+    res.render("allBlocks", {
+        allBlocks: allBlocks,
+        allComments: allComments,
+        loggedIn: authenticated,
+        admin: admin,
+    });
+})
+
+app.post('/editblock', auth.isLoggedIn, async (req, res) => {
+
+    let authenticated = false;
+    let admin = false;
+    if (req.user) {
+        authenticated = true;
+        if (req.user.admin) {
+            admin = true;
+        }
+    }
+
+    const allBlocks = await Block.findById(req.body.blockId)
+    console.log(allBlocks);
+
+    res.render("updateBlock", {
+        allBlocks:allBlocks,
+        loggedIn: true,
+        admin: admin
+    });
+})
+
+app.post("/updateblock", auth.isLoggedIn, async (req, res) => {
+
+    let authenticated = false;
+    let admin = false;
+    if (req.user) {
+        authenticated = true;
+        if (req.user.admin) {
+            admin = true;
+        }
+    }
+    await Block.findByIdAndUpdate(req.body.id, {
+        title:req.body.title,
+        body:req.body.body
+    })
+    
+    const block = await Block.findById(req.body.id)
+    res.render("updateblock", {
+        allBlocks:block,
+        loggedIn: true,
+        admin: admin
     });
 })
 

@@ -1,18 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Lobster&display=swap");
 
-
-body{
-    font-family: 'Lobster', cursive;
+body {
+  font-family: "Lobster", cursive;
 }
 
-.comment h4{
-    margin: 0;
+.comment h4 {
+  margin: 0;
 }
 
-.comment p{
-    margin: 0;
+.comment p {
+  margin: 0;
 }
 
-.comments form{
-    margin-top: 15px;
+.comments form {
+  margin-top: 15px;
+}
+
+#deleteComment {
+  background: none !important;
+  border: none;
+  padding: 0 !important;
+  /*optional*/
+  font-family: arial, sans-serif;
+  /*input has OS specific font-family*/
+  color: #069;
+  text-decoration: underline;
+  cursor: pointer;
 }

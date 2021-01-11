@@ -23,6 +23,12 @@
     {{#each allBlocks}}
     <h3>{{this.title}}</h3>
     <p>{{this.body}}</p>
+    <form action="/deleteblock" method="post">
+        <button id="deleteBlock" type="submit" name="blockId" value={{this._id}}>Delete Block</button>
+    </form>
+    <form action="/editblock" method="post">
+        <button id="editblock" type="submit" name="blockId" value={{this._id}}>Edit Block</button>
+    </form>
     {{/each}}
 
     <h2>Update Password: </h2>
